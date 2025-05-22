@@ -1,0 +1,4 @@
+[[appendix_blog]]
+[appendix]
+[role="Creating a blog"]
+

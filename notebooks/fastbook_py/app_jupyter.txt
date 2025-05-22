@@ -1,0 +1,30 @@
+#hide
+! [ -e /content ] && pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+from fastbook import *
+[appendix]
+[role="Jupyter notebook 101"]
+1+1
+
+3/2
+
+# Import necessary libraries
+from fastai.vision.all import * 
+import matplotlib.pyplot as plt
+
+from PIL import Image
+
+a = 1
+b = a + 1
+c = b + a + 1
+d = c + b + a + 1
+a, b, c ,d
+
+plt.plot([a,b,c,d])
+plt.show()
+
+Image.open(image_cat())
+
+%timeit [i+1 for i in range(1000)]

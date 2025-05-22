@@ -1,0 +1,71 @@
+#hide
+! [ -e /content ] && pip install -Uqq fastbook
+import fastbook
+fastbook.setup_book()
+
+#hide
+from fastbook import *
+[[chapter_sizing_and_tta]]
+from fastai.vision.all import *
+path = untar_data(URLs.IMAGENETTE)
+
+dblock = DataBlock(blocks=(ImageBlock(), CategoryBlock()),
+                   get_items=get_image_files,
+                   get_y=parent_label,
+                   item_tfms=Resize(460),
+                   batch_tfms=aug_transforms(size=224, min_scale=0.75))
+dls = dblock.dataloaders(path, bs=64)
+
+model = xresnet50(n_out=dls.c)
+learn = Learner(dls, model, loss_func=CrossEntropyLossFlat(), metrics=accuracy)
+learn.fit_one_cycle(5, 3e-3)
+
+x,y = dls.one_batch()
+x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
+
+def get_dls(bs, size):
+    dblock = DataBlock(blocks=(ImageBlock, CategoryBlock),
+                   get_items=get_image_files,
+                   get_y=parent_label,
+                   item_tfms=Resize(460),
+                   batch_tfms=[*aug_transforms(size=size, min_scale=0.75),
+                               Normalize.from_stats(*imagenet_stats)])
+    return dblock.dataloaders(path, bs=bs)
+
+dls = get_dls(64, 224)
+
+x,y = dls.one_batch()
+x.mean(dim=[0,2,3]),x.std(dim=[0,2,3])
+
+model = xresnet50(n_out=dls.c)
+learn = Learner(dls, model, loss_func=CrossEntropyLossFlat(), metrics=accuracy)
+learn.fit_one_cycle(5, 3e-3)
+
+dls = get_dls(128, 128)
+learn = Learner(dls, xresnet50(n_out=dls.c), loss_func=CrossEntropyLossFlat(), 
+                metrics=accuracy)
+learn.fit_one_cycle(4, 3e-3)
+
+learn.dls = get_dls(64, 224)
+learn.fine_tune(5, 1e-3)
+
+preds,targs = learn.tta()
+accuracy(preds, targs).item()
+
+#hide_input
+#id mixup_example
+#caption Mixing a church and a gas station
+#alt An image of a church, a gas station and the two mixed up.
+church = PILImage.create(get_image_files_sorted(path/'train'/'n03028079')[0])
+gas = PILImage.create(get_image_files_sorted(path/'train'/'n03425413')[0])
+church = church.resize((256,256))
+gas = gas.resize((256,256))
+tchurch = tensor(church).float() / 255.
+tgas = tensor(gas).float() / 255.
+
+_,axs = plt.subplots(1, 3, figsize=(12,4))
+show_image(tchurch, ax=axs[0]);
+show_image(tgas, ax=axs[1]);
+show_image((0.3*tchurch + 0.7*tgas), ax=axs[2]);
+
+
